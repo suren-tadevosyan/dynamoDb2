@@ -11,9 +11,11 @@
   "dependencies": [],
   "event_sources": [
     {
+      "resource_type": "dynamodb_trigger",
+      "target_table": "Configuration",
       "resource_name": "Configuration",
-      "resource_type": "dynamodb",
-      "batch_size": 10
+      "batch_size": 1,
+      "function_response_types": ["NEW_AND_OLD_IMAGES"]
     }
   ],
   "env_variables": {
