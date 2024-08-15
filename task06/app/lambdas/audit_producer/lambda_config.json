@@ -12,7 +12,8 @@
   "event_sources": [
     {
       "resource_name": "Configuration",
-      "resource_type": "dynamodb"
+      "resource_type": "dynamodb",
+      "batch_size": 10
     }
   ],
   "env_variables": {
