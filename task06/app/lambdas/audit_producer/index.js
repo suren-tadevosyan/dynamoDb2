@@ -1,8 +1,8 @@
-const AWS = require("aws-sdk");
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
-const { v4: uuidv4 } = require("uuid");
+import AWS from "aws-sdk";
+import { v4 as uuidv4 } from "uuid";
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   for (const record of event.Records) {
     if (record.eventName === "MODIFY" || record.eventName === "INSERT") {
       const newItem = AWS.DynamoDB.Converter.unmarshall(
