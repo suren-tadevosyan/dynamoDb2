@@ -1,46 +1,50 @@
 import AWS from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
 
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const { DynamoDB } = AWS;
+const dynamoDb = new DynamoDB.DocumentClient();
+const AUDIT_TABLE = process.env.target_table || "Audit";
 
 export const handler = async (event) => {
-  try {
-    console.log("Event received:", JSON.stringify(event, null, 2));
+  for (const record of event.Records) {
+    if (record.eventName === "INSERT") {
+      const newItem = record.dynamodb.NewImage;
+      const auditItem = {
+        id: uuidv4(),
+        itemKey: newItem.key.S,
+        modificationTime: new Date().toISOString(),
+        newValue: {
+          key: newItem.key.S,
+          value: newItem.value.N,
+        },
+      };
 
-    if (!event.Records || !Array.isArray(event.Records)) {
-      console.error("event.Records is not an array or is undefined");
-      return;
+      await dynamoDb
+        .put({
+          TableName: AUDIT_TABLE,
+          Item: auditItem,
+        })
+        .promise();
+    } else if (record.eventName === "MODIFY") {
+      const oldItem = record.dynamodb.OldImage;
+      const newItem = record.dynamodb.NewImage;
+      const auditItem = {
+        id: uuidv4(),
+        itemKey: newItem.key.S,
+        modificationTime: new Date().toISOString(),
+        updatedAttribute: "value",
+        oldValue: oldItem.value.N,
+        newValue: newItem.value.N,
+      };
+
+      await dynamoDb
+        .put({
+          TableName: AUDIT_TABLE,
+          Item: auditItem,
+        })
+        .promise();
     }
-
-    for (const record of event.Records) {
-      console.log("Processing record:", JSON.stringify(record, null, 2));
-
-      if (record.eventName === "MODIFY" || record.eventName === "INSERT") {
-        const newItem = AWS.DynamoDB.Converter.unmarshall(
-          record.dynamodb.NewImage
-        );
-        const oldItem = record.dynamodb.OldImage
-          ? AWS.DynamoDB.Converter.unmarshall(record.dynamodb.OldImage)
-          : null;
-
-        const auditEntry = {
-          TableName: "Audit",
-          Item: {
-            id: uuidv4(),
-            itemKey: newItem.key || "UnknownKey",
-            modificationTime: new Date().toISOString(),
-            newValue: newItem,
-            oldValue: oldItem,
-          },
-        };
-
-        console.log("Audit entry:", JSON.stringify(auditEntry, null, 2));
-
-        await dynamoDb.put(auditEntry).promise();
-        console.log("Audit entry inserted successfully");
-      }
-    }
-  } catch (error) {
-    console.error("Error processing event:", error);
   }
+
+  return { statusCode: 200, body: "Success" };
 };
