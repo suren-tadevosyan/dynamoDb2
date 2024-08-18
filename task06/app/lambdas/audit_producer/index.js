@@ -15,7 +15,7 @@ export const handler = async (event) => {
         modificationTime: new Date().toISOString(),
         newValue: {
           key: newItem.key.S,
-          value: newItem.value.N,
+          value: parseInt(newItem.value.N, 10),
         },
       };
 
@@ -33,8 +33,8 @@ export const handler = async (event) => {
         itemKey: newItem.key.S,
         modificationTime: new Date().toISOString(),
         updatedAttribute: "value",
-        oldValue: oldItem.value.N,
-        newValue: newItem.value.N,
+        oldValue: parseInt(oldItem.value.N, 10),
+        newValue: parseInt(newItem.value.N, 10),
       };
 
       await dynamoDb
